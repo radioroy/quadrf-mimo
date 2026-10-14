@@ -1,0 +1,19 @@
+[Unit]
+Description=QuadRF MIMO Link
+Wants=load-quadrf.service
+After=load-quadrf.service
+
+[Service]
+Type=simple
+# User, Group and HOME come from /etc/systemd/system/quadrf-mimo.service.d/
+User=root
+WorkingDirectory=/var/lib/quadrf/demos
+ExecStart=/usr/bin/quadrf-mimo serve --port 8091 --web /usr/share/quadrf/mimo --state /var/lib/quadrf-mimo/settings.conf
+LimitRTPRIO=60
+KillMode=control-group
+KillSignal=SIGINT
+TimeoutStopSec=5
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

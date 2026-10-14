@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.scalerf.QuadRF.MIMO</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>MIMO Link</name>
+  <summary>Phase-coded 4x4 MIMO link and chat between two QuadRFs</summary>
+  <description>
+    <p>Phase-coded 4x4 MIMO transceiver and live telemetry browser interface for QuadRF.</p>
+  </description>
+  <launchable type="desktop-id">com.scalerf.QuadRF.MIMO.desktop</launchable>
+  <provides>
+    <binary>quadrf-mimo</binary>
+  </provides>
+  <url type="homepage">https://quadrf.com/</url>
+  <developer id="com.scalerf">
+    <name>Scale RF</name>
+  </developer>
+  <content_rating type="oars-1.1"/>
+</component>

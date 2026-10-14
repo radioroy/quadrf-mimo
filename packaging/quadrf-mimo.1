@@ -1,0 +1,39 @@
+.TH QUADRF-MIMO 1 "October 2026" "QuadRF" "QuadRF"
+.SH NAME
+quadrf-mimo \- phase-coded 4x4 MIMO link and telemetry server
+.SH SYNOPSIS
+.B quadrf-mimo
+.BR serve " | " cli
+[\fIoptions\fR]
+.SH DESCRIPTION
+Runs a phase-coded 4x4 MIMO TDD transceiver across the four QuadRF antenna
+elements and serves live channel, constellation, spectrum, and chat telemetry
+over WebSockets.
+.PP
+The control panel Launch button and the desktop icon both start
+.B quadrf-mimo.service
+and open
+.IR /mimo/ ,
+which nginx proxies to port 8091. Closing the last tab stops the service.
+.SH OPTIONS
+.TP
+.BI --port " N"
+Listen address
+.BR http://0.0.0.0:N .
+Default: 8091.
+.TP
+.BI --web " DIR"
+Directory of static files. Default:
+.IR /usr/share/quadrf/mimo .
+.TP
+.BI --state " FILE"
+Persistent settings file. Default:
+.IR /var/lib/quadrf-mimo/settings.conf .
+.SH FILES
+.TP
+.I /usr/share/quadrf/mimo
+Installed browser client.
+.SH SEE ALSO
+.BR quadrf-phasegaze (1),
+.BR quadrf-jtag (1),
+.BR quadrf-app (8)

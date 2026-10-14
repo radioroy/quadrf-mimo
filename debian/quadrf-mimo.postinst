@@ -1,0 +1,30 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = configure ]; then
+    # Clean up any legacy manual registration from tools/install.sh
+    if [ -f /etc/systemd/system/mimo.service ]; then
+        systemctl stop mimo.service 2>/dev/null || true
+        rm -f /etc/systemd/system/mimo.service
+        rm -rf /etc/systemd/system/mimo.service.d
+        rm -f /usr/share/quadrf/apps.d/mimo.json
+        rm -f /usr/share/applications/mimo.desktop
+        systemctl daemon-reload 2>/dev/null || true
+    fi
+    if [ -f /usr/share/quadrf/functions.sh ]; then
+        . /usr/share/quadrf/functions.sh
+        install -d -m 755 /var/lib/quadrf/demos
+        install -d -m 755 /var/lib/quadrf-mimo
+        if getent passwd "${QUADRF_USER}" >/dev/null; then
+            chown "${QUADRF_USER}:$(id -gn "${QUADRF_USER}")" /var/lib/quadrf/demos
+            chown "${QUADRF_USER}:$(id -gn "${QUADRF_USER}")" /var/lib/quadrf-mimo
+        fi
+        quadrf_user_dropin quadrf-mimo.service
+    fi
+    if [ -x /usr/lib/quadrf/apply.d/46-mimo ]; then
+        /usr/lib/quadrf/apply.d/46-mimo
+    fi
+fi
+
+#DEBHELPER#
+exit 0

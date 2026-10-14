@@ -1,0 +1,14 @@
+{
+  "apps": [
+    {
+      "id": "mimo",
+      "name": "MIMO Link",
+      "desktop_entry": "com.scalerf.QuadRF.MIMO.desktop",
+      "service": "quadrf-mimo.service",
+      "binaries": ["quadrf-mimo"],
+      "exclusive": true,
+      "open": "/mimo/",
+      "ready_port": 8091
+    }
+  ]
+}

@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MIMO</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#000000">
+<style>
+:root {
+    --bg: rgba(6, 8, 7, 0.88);
+    --pop: rgba(6, 8, 7, 0.94);
+    --line: #232823;
+    --line-hi: #6e7a6e;
+    --txt: #b8c4b8;
+    --dim: #b8c4b8;
+    --acc: #b8c4b8;
+    --acc-ink: #0c110c;
+    --acc-soft: rgba(184, 196, 184, 0.28);
+    --peer: #8fa7c4;
+    --amber: #e6b45a;
+    --danger: #d05545;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; height: 100%; background: #000;
+    font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
+    color: var(--txt); font-size: 13px; }
+body { overflow-y: auto; overflow-x: hidden; }
+
+#status { position: fixed; right: 8px; bottom: 8px; z-index: 6; font-size: 10px;
+    letter-spacing: 0.1em; color: var(--dim); pointer-events: none; text-shadow: 0 1px 2px #000; }
+#status.warn { color: var(--amber); }
+#status.lost { color: var(--danger); }
+#host { position: fixed; left: 8px; bottom: 8px; z-index: 6; font-size: 10px;
+    letter-spacing: 0.1em; color: var(--dim); pointer-events: none; text-shadow: 0 1px 2px #000; }
+
+.hbtn { background: var(--bg); border: 1px solid var(--line-hi);
+    color: var(--txt); padding: 9px 13px; font: inherit; font-size: 11px; letter-spacing: 0.15em;
+    cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+.hbtn:active { border-color: var(--acc); }
+.hbtn.on { color: var(--acc-ink); background: var(--acc); border-color: var(--acc); }
+#hud-left, #hud-right { position: fixed; top: 8px; z-index: 8; display: flex; gap: 8px; }
+#hud-left { left: 8px; }
+#hud-right { right: 8px; }
+
+.hud-pop { position: fixed; top: 48px; right: 8px; z-index: 9; width: min(360px, calc(100vw - 16px));
+    display: none; background: var(--pop); border: 1px solid var(--line-hi);
+    padding: 8px 10px 16px; max-height: calc(100vh - 64px); max-height: calc(100dvh - 64px);
+    overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
+    scrollbar-width: thin; scrollbar-color: rgba(8, 10, 8, 0.45) transparent; }
+.hud-pop::-webkit-scrollbar { width: 6px; }
+.hud-pop::-webkit-scrollbar-track { background: transparent; }
+.hud-pop::-webkit-scrollbar-thumb { background: rgba(8, 10, 8, 0.45);
+    border: 1px solid rgba(184, 196, 184, 0.18); }
+.hud-pop.open { display: block; }
+
+.tabs { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.tab { text-align: center; padding: 5px 10px; border: 1px solid var(--line-hi);
+    letter-spacing: 0.12em; font-size: 11px; cursor: pointer; color: var(--dim);
+    background: none; font: inherit; }
+.tab.on { color: var(--acc-ink); background: var(--acc); border-color: var(--acc); }
+
+.actions { display: flex; gap: 8px; margin: 14px 0 4px; }
+.abtn { flex: 1; padding: 11px 4px; text-align: center; border: 1px solid var(--line-hi);
+    background: var(--bg); color: var(--txt); font: inherit; font-size: 11px;
+    letter-spacing: 0.15em; cursor: pointer; }
+.abtn.primary { border-color: var(--acc); color: var(--acc); }
+.abtn:active { background: var(--acc-soft); }
+.abtn:disabled { opacity: 0.45; cursor: default; }
+
+.srow { margin: 14px 0; }
+.srow label { display: flex; justify-content: space-between; font-size: 11px;
+    letter-spacing: 0.12em; color: var(--txt); margin-bottom: 6px; }
+.srow label span { color: var(--acc); }
+.srow label span.mod { opacity: 1; }
+.srow input[type=range] { width: 100%; -webkit-appearance: none; appearance: none; height: 22px;
+    background: transparent; margin: 0; }
+.srow input[type=range]::-webkit-slider-runnable-track { height: 2px; background: var(--line-hi); }
+.srow input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px;
+    margin-top: -9px; background: #0c110c; border: 1px solid var(--acc); border-radius: 0; }
+.srow input[type=range]::-moz-range-track { height: 2px; background: var(--line-hi); }
+.srow input[type=range]::-moz-range-thumb { width: 18px; height: 18px; background: #0c110c;
+    border: 1px solid var(--acc); border-radius: 0; }
+.tgl { display: flex; justify-content: space-between; align-items: center; padding: 11px 0;
+    border-bottom: 1px solid var(--line); font-size: 11px; letter-spacing: 0.12em; cursor: pointer; }
+.tgl .sw2 { width: 34px; height: 16px; border: 1px solid var(--line-hi); position: relative; }
+.tgl .sw2::after { content: ''; position: absolute; top: 2px; left: 2px; width: 10px; height: 10px;
+    background: var(--dim); transition: left 0.12s, background 0.12s; }
+.tgl.on .sw2::after { left: 20px; background: var(--acc); }
+.sect { margin: 20px 0 4px; font-size: 10px; letter-spacing: 0.25em; color: var(--dim);
+    border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+.sect:first-child { margin-top: 4px; }
+
+/* ---------- dashboard ---------- */
+#main { padding: 56px 8px 0; display: grid; gap: 8px;
+    grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); }
+.box { background: var(--bg); border: 1px solid var(--line-hi); padding: 8px 10px 10px; min-width: 0; }
+.box .sect { margin-top: 0; }
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; font-size: 11px;
+    letter-spacing: 0.08em; margin-top: 6px; }
+#b-frame .kv span { white-space: nowrap; }
+.kv b { font-weight: normal; color: #e8ece8; text-align: right; font-variant-numeric: tabular-nums; }
+.kv b.warn { color: var(--amber); }
+.peer-blk { margin-top: 8px; padding: 5px 0 1px 8px; border-left: 2px solid var(--peer);
+    border-top: 1px solid var(--line); }
+.peer-hd { font-size: 9px; letter-spacing: 0.22em; color: var(--peer); margin-bottom: 3px; }
+.peer-blk .kv { margin-top: 2px; }
+.big { display: flex; gap: 10px; margin: 8px 0 4px; }
+.big > div { flex: 1; border: 1px solid var(--line); padding: 6px 8px; }
+.big > div.peer-card { border-left: 2px solid var(--peer); }
+.big > div.peer-card .l { color: var(--peer); }
+.big .l { font-size: 10px; letter-spacing: 0.2em; }
+.big .v { font-size: 22px; color: #e8ece8; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.big .u { font-size: 10px; letter-spacing: 0.1em; margin-left: 4px; color: var(--dim); }
+.hbar { display: grid; grid-template-columns: 84px 1fr 78px; align-items: center; gap: 8px;
+    font-size: 10px; letter-spacing: 0.12em; margin: 5px 0; }
+.hbar .tr { position: relative; height: 12px; border: 1px solid var(--line); }
+.hbar .tr i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--acc); opacity: 0.75; }
+.hbar.bw .tr i { background: var(--peer); }
+.hbar b { font-weight: normal; color: #e8ece8; text-align: right; font-variant-numeric: tabular-nums; }
+
+[data-tip] { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='14'%3E%3Ctext x='1' y='11' font-size='11' font-family='ui-monospace,monospace' fill='%23e8ece8'%3E?%3C/text%3E%3C/svg%3E") 2 0, help;
+    text-decoration: underline dotted rgba(184, 196, 184, 0.35); text-underline-offset: 3px; }
+#tip { position: fixed; z-index: 20; max-width: min(300px, calc(100vw - 16px)); display: none;
+    background: #0c110c; border: 1px solid var(--line-hi); padding: 7px 9px; font-size: 11px;
+    line-height: 1.45; letter-spacing: 0.02em; color: #e8ece8; pointer-events: none;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6); }
+
+.eg { display: grid; grid-template-columns: 34px repeat(4, 1fr); gap: 5px; margin: 8px 0 4px;
+    align-items: center; font-size: 10px; letter-spacing: 0.15em; }
+.eg .h { text-align: center; }
+.eb { padding: 7px 0; border: 1px solid var(--line-hi); background: none; color: var(--dim);
+    font: inherit; font-size: 10px; letter-spacing: 0.12em; cursor: pointer; }
+.eb.on { color: var(--acc-ink); background: var(--acc); border-color: var(--acc); }
+.eb:disabled { opacity: 0.35; cursor: default; }
+.mrow { display: flex; align-items: center; gap: 10px; margin: 8px 0 2px; font-size: 10px; letter-spacing: 0.15em; }
+.mrow .tabs { flex: 1; }
+.mrow .tab { flex: 1; }
+.srow .eg { grid-template-columns: repeat(4, 1fr); margin: 0; }
+
+.sep-top { display: flex; gap: 10px; margin: 8px 0 6px; }
+.sep-top > div { flex: 1; border: 1px solid var(--line); padding: 6px 8px; }
+.sep-top .l { font-size: 10px; letter-spacing: 0.2em; }
+.sep-top .v { font-size: 20px; color: #e8ece8; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.sep-top .u { font-size: 10px; letter-spacing: 0.1em; margin-left: 4px; color: var(--dim); }
+.sep-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sep-row canvas { display: block; width: 100%; height: 120px; }
+.sep-note { font-size: 10px; letter-spacing: 0.08em; margin-top: 6px; min-height: 14px; color: var(--dim); }
+#sep-hist { display: block; width: 100%; height: 44px; margin-top: 6px; }
+
+table.el { width: 100%; border-collapse: collapse; font-size: 11px; letter-spacing: 0.06em;
+    margin-top: 6px; font-variant-numeric: tabular-nums; }
+table.el th { font-weight: normal; font-size: 10px; letter-spacing: 0.15em; text-align: left;
+    padding: 2px 3px 4px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.el td { padding: 4px 3px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.el .pdiv { border-left: 1px solid var(--line-hi); padding-left: 7px; }
+table.el th.pcol { color: var(--peer); }
+.sbar { display: inline-block; vertical-align: middle; width: 36px; height: 8px;
+    border: 1px solid var(--line); position: relative; margin-right: 6px; }
+.sbar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--acc); opacity: 0.7; }
+.sbar.peer i { background: var(--peer); }
+.mod { color: #e8ece8; }
+.mod.off { opacity: 0.45; }
+
+#chat-log { height: 190px; overflow-y: auto; border: 1px solid var(--line); padding: 6px 8px;
+    font-size: 12px; line-height: 1.55; user-select: text; -webkit-user-select: text;
+    scrollbar-width: thin; scrollbar-color: rgba(184, 196, 184, 0.25) transparent; }
+#chat-log .m { display: flex; gap: 8px; }
+#chat-log .who { flex: 0 0 auto; font-size: 10px; letter-spacing: 0.12em; padding-top: 2px; opacity: 0.7; }
+#chat-log .tx { flex: 1; color: #e8ece8; word-break: break-word; }
+#chat-log .st { flex: 0 0 auto; font-size: 10px; letter-spacing: 0.1em; padding-top: 2px; }
+#chat-log .st.pend { color: var(--amber); }
+#chat-row { display: flex; gap: 8px; margin-top: 8px; }
+#chat-in { flex: 1; min-width: 0; padding: 9px 8px; background: var(--bg); color: var(--acc);
+    border: 1px solid var(--line-hi); font: inherit; font-size: 13px; }
+#chat-in:focus { border-color: var(--acc); outline: none; }
+#chat-row .abtn { flex: 0 0 auto; padding: 9px 16px; }
+
+/* ---------- stage plots ---------- */
+#stages { display: grid; padding: 8px 8px 40px; gap: 8px;
+    grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); }
+.plot { background: var(--bg); border: 1px solid var(--line-hi); padding: 6px 8px 8px; min-width: 0; }
+.plot .hd { display: flex; justify-content: space-between; gap: 8px; font-size: 10px;
+    letter-spacing: 0.2em; border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+.plot .hd b { font-weight: normal; letter-spacing: 0.06em; color: #e8ece8; text-align: right;
+    font-variant-numeric: tabular-nums; }
+.plot .hd b i { font-style: normal; margin-left: 6px; }
+.plot canvas { display: block; width: 100%; height: 150px; margin-top: 4px; }
+.plot.sq canvas { height: auto; aspect-ratio: 1; max-height: 220px; }
+#cons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 4px; }
+#cons canvas { width: 100%; aspect-ratio: 1; height: auto; margin: 0; }
+.plot.wide { grid-column: 1 / -1; }
+
+#help { position: fixed; inset: 0; z-index: 30; display: none; background: rgba(0, 0, 0, 0.6);
+    padding: 48px 8px 16px; overflow-y: auto; }
+#help.open { display: block; }
+#help .card { max-width: 640px; margin: 0 auto; background: var(--pop); border: 1px solid var(--line-hi);
+    padding: 10px 16px 18px; font-size: 12px; line-height: 1.6; color: #e8ece8; }
+#help .card .hd { display: flex; justify-content: space-between; align-items: center;
+    font-size: 10px; letter-spacing: 0.25em; color: var(--dim); border-bottom: 1px solid var(--line);
+    padding-bottom: 6px; }
+#help h3 { font-weight: normal; font-size: 10px; letter-spacing: 0.22em; color: var(--dim); margin: 18px 0 4px; }
+#help p { margin: 0 0 8px; }
+#help b { font-weight: normal; color: var(--acc); }
+</style>
+</head>
+<body>
+
+<div id="hud-left">
+    <button class="hbtn" id="btn-help">ABOUT</button>
+</div>
+<div id="hud-right">
+    <button class="hbtn" id="btn-set">CONFIG</button>
+</div>
+<div id="status" class="warn">CONNECTING</div>
+<div id="host"></div>
+
+<div id="main">
+    <section class="box" id="b-radio">
+        <div class="sect">RADIO</div>
+        <div class="eg" id="eg">
+            <span></span><span class="h">EL0</span><span class="h">EL1</span><span class="h">EL2</span><span class="h">EL3</span>
+            <span data-tip="Enable local TX antenna elements. Off elements are powered down and marked OFF in the frame header.">TX</span>
+            <button class="eb" data-m="tx_elems" data-b="0">ON</button><button class="eb" data-m="tx_elems" data-b="1">ON</button>
+            <button class="eb" data-m="tx_elems" data-b="2">ON</button><button class="eb" data-m="tx_elems" data-b="3">ON</button>
+            <span data-tip="Enable local RX channels fed to the decoder. Disabled channels are zeroed after the DDC.">RX</span>
+            <button class="eb" data-m="rx_lanes" data-b="0">ON</button><button class="eb" data-m="rx_lanes" data-b="1">ON</button>
+            <button class="eb" data-m="rx_lanes" data-b="2">ON</button><button class="eb" data-m="rx_lanes" data-b="3">ON</button>
+        </div>
+        <div class="mrow"><span data-tip="Phase modulation on enabled local TX elements (BPSK 1, QPSK 2, 8PSK 3 bits/chip). Signaled in each frame header.">TX MOD</span>
+            <div class="tabs" id="r-modtabs"></div></div>
+        <div class="kv">
+            <span data-tip="This unit's station ID from /etc/quadrf/quadrf.conf, sent in frame 0 of every TX burst.">CALLSIGN</span><b id="r-call">-</b>
+            <span data-tip="Local MAX2850 TX gain (0–63 dB) and ATPC state (MANUAL, TRACK, HOLD, SEARCH). In AUTO, steers PEER RX LEVEL to TARGET.">TX GAIN / ATPC</span><b id="r-tx">-</b>
+            <span data-tip="Local FPGA RX gain (0–63 dB, hardware AGC off). Fixed unless AUTO RX GAIN steps it by 6 dB when peer TX gain is pinned at 0 dB or max.">RX GAIN</span><b id="r-rx">-</b>
+            <span data-tip="Peak ADC count on this receiver for the last peer frame (max of RX CH LEVELS) vs. local ADC LEVEL LIMIT. Hardware saturates near 39 counts.">RX LEVEL / LIMIT</span><b id="r-lvl">-</b>
+            <span data-tip="99th-percentile peak max(|I|,|Q|) ADC count per RX channel (CH0–CH3) over the last received frame.">RX CH LEVELS</span><b id="r-lanes">-</b>
+        </div>
+        <div class="peer-blk">
+            <div class="peer-hd" data-tip="Values sent to this unit by the peer in its burst ID and feedback blocks.">FROM PEER</div>
+            <div class="kv">
+                <span data-tip="Station ID decoded from the peer's burst ID block.">PEER CALLSIGN</span><b id="r-pcall">-</b>
+                <span data-tip="Transmit and receive gains set on the peer radio, reported in its feedback block.">PEER TX / RX GAIN</span><b id="r-peer">-</b>
+                <span data-tip="Peak ADC level of this unit's signal measured at the peer (from feedback) vs. this unit's PEER RX LEVEL TARGET. Local AUTO TX POWER adjusts TX GAIN to match TARGET.">PEER RX LEVEL / TARGET</span><b id="r-plvl">-</b>
+            </div>
+        </div>
+    </section>
+
+    <section class="box" id="b-rate">
+        <div class="sect">THROUGHPUT</div>
+        <div class="big">
+            <div><div class="l" data-tip="Payload goodput decoded on this receiver: 160 data bits per CRC-valid block, 2 s rolling window.">RX</div><div><span class="v" id="gp-rx">-</span><span class="u">kb/s</span></div></div>
+            <div class="peer-card"><div class="l" data-tip="Payload goodput of this unit's transmissions decoded at the peer, computed over a 3 s window from peer feedback block counts.">TX (PEER)</div><div><span class="v" id="gp-tx">-</span><span class="u">kb/s</span></div></div>
+            <div><div class="l" data-tip="Bidirectional spectral efficiency: (RX + TX goodput) / BANDWIDTH. Both TDD directions share one RF channel.">b/s/Hz</div><div><span class="v" id="se">-</span></div></div>
+        </div>
+        <div class="hbar"><span data-tip="Combined RX + TX goodput. Exceeds the BANDWIDTH bar above 1 b/s/Hz.">DATA</span><div class="tr"><i id="bar-data"></i></div><b id="bar-data-v">-</b></div>
+        <div class="hbar bw"><span data-tip="Main-lobe half-width 1/(2T) from tracked write period T. Each element updates once every 2 writes (symbol duration 2T).">BANDWIDTH</span><div class="tr"><i id="bar-bw"></i></div><b id="bar-bw-v">-</b></div>
+        <div class="kv">
+            <span data-tip="Frequency span containing 90% and 99% of received frame power within ±1 MHz (noise floor subtracted).">OCCUPIED 90 / 99 %</span><b id="bw-occ">-</b>
+            <span data-tip="Fraction of received frame power within the first sinc² nulls at ±1/(2T).">POWER IN MAIN LOBE</span><b id="lobe">-</b>
+            <span data-tip="Raw on-air payload bit rate during a frame (RX from peer / local TX), excluding CRC, inter-frame gaps, and TDD turnaround.">PHY IN FRAME RX / TX</span><b id="phy">-</b>
+            <span data-tip="Active TX elements in the peer's frame header (RX) / enabled TX elements on this unit (TX).">DATA ELEMENTS RX / TX</span><b id="streams">-</b>
+        </div>
+    </section>
+
+    <section class="box" id="b-sep">
+        <div class="sect" data-tip="Spatial conditioning of the 4×4 channel matrix H estimated on this receiver across enabled RX channels and active peer TX elements.">SPATIAL SEPARATION</div>
+        <div class="sep-top">
+            <div><div class="l" data-tip="Participation ratio (Σσ²)² / Σσ⁴ from the singular values σ of H. Equals active TX element count N when all spatial modes have equal power; drops to 1.0 in a rank-1 channel.">PATHS</div><div><span class="v" id="sep-n">-</span><span class="u" id="sep-of"></span></div></div>
+            <div><div class="l" data-tip="Smallest angle arccos(|⟨hᵢ,hⱼ⟩| / (‖hᵢ‖‖hⱼ‖)) between any two active columns of H at this receiver. 90° = orthogonal (no cross-talk); 0° = collinear (unseparable).">WORST PAIR</div><div><span class="v" id="sep-w">-</span><span class="u" id="sep-wp"></span></div></div>
+        </div>
+        <div class="sep-row">
+            <canvas id="sep-sv" data-tip="Singular values σᵢ of the active channel matrix H in dB relative to σ₁ (0 dB). Each bar is an orthogonal spatial eigenmode."></canvas>
+            <canvas id="sep-ang" data-tip="Pairwise spatial angle between active peer TX element columns of H at this receiver. Bright = near 90° (orthogonal), dark = collinear."></canvas>
+        </div>
+        <canvas id="sep-hist" data-tip="Rolling 60 s history of effective spatial PATHS."></canvas>
+        <div class="sep-note" id="sep-note"></div>
+    </section>
+
+    <section class="box" id="b-elem">
+        <div class="sect">ELEMENTS</div>
+        <table class="el">
+            <thead><tr><th data-tip="Antenna element index (0–3). Left columns: peer element k received here; right columns: local element k transmitted and reported by peer.">EL</th>
+                <th data-tip="Modulation on peer TX element k, decoded from the incoming frame header (OFF = powered down).">PEER TX</th>
+                <th data-tip="Post-SIC/MRC symbol SNR (−10 log₁₀ EVM²) of peer element k decoded on this receiver, last frame.">RX SNR</th>
+                <th class="pdiv" data-tip="Modulation transmitted on this unit's element k.">LOCAL TX</th>
+                <th class="pcol" data-tip="Post-SIC/MRC symbol SNR of this unit's element k measured at the peer (75th percentile of last 8 frames, reported in feedback).">PEER SNR</th></tr></thead>
+            <tbody id="el-body"></tbody>
+        </table>
+        <div class="kv">
+            <span data-tip="Condition number σ_max / σ_min of H across active peer TX elements on the last received frame (1.0 = orthogonal, 1.0 when 1 element active).">CHANNEL COND</span><b id="cond">-</b>
+            <span data-tip="Whole-frame signal-to-residual ratio 10 log₁₀(‖HX‖² / ‖Y − HX‖²): measured on this receiver (RX) / reported by the peer for this unit's frames (PEER).">MODEL SNR RX / PEER</span><b id="model">-</b>
+        </div>
+    </section>
+
+    <section class="box" id="b-frame">
+        <div class="sect">FRAMES</div>
+        <div class="kv">
+            <span data-tip="Local RX frame counts: valid header CRC-8 (OK) / passed preamble gate but failed header CRC-8 (BAD) / step trigger rejected by preamble gate (FALSE START).">RX OK / BAD / FALSE START</span><b id="frames">-</b>
+            <span data-tip="24-byte payload blocks passing CRC-16 out of total blocks in valid RX frames on this receiver.">BLOCKS RX</span><b id="blocks">-</b>
+            <span data-tip="Bit error rate on known PRBS filler blocks at this receiver (total bits checked in parentheses).">BER (FILL)</span><b id="ber">-</b>
+            <span data-tip="Carrier frequency offset between peer TX and local RX LO on the last decoded frame (NCO offset + residual tone fit).">CFO</span><b id="cfo">-</b>
+            <span data-tip="JTAG register write period T: tracked from the peer's last frame (RX) / measured batch time per write on this transmitter (TX) with rate-control state.">WRITE PERIOD RX / TX</span><b id="tper">-</b>
+            <span data-tip="Write slots in the last received frame exceeding 1.25 T, and duration of the longest slot.">STALLS / MAX SLOT</span><b id="stalls">-</b>
+            <span data-tip="Cumulative frames transmitted by this unit.">FRAMES SENT</span><b id="fsent">-</b>
+            <span data-tip="Local RX pipeline: step triggers queued (DETECT) / decode or header failures (FAIL) / jobs dropped with decode queue full (DROP) / CSI DMA ring overruns outside TX (RING OVR).">DETECT / FAIL / DROP / RING OVR</span><b id="rxc">-</b>
+        </div>
+        <div class="peer-blk">
+            <div class="peer-hd" data-tip="Counters for this unit's transmissions as decoded and reported back by the peer.">FROM PEER</div>
+            <div class="kv">
+                <span data-tip="24-byte blocks from this unit's TX frames that passed CRC-16 at the peer, reported in peer feedback.">PEER BLOCKS</span><b id="pblocks">-</b>
+            </div>
+        </div>
+    </section>
+
+    <section class="box" id="b-chat">
+        <div class="sect">CHAT</div>
+        <div id="chat-log"></div>
+        <div id="chat-row">
+            <input id="chat-in" type="text" maxlength="512" autocomplete="off" enterkeyhint="send">
+            <button class="abtn primary" id="chat-send">SEND</button>
+        </div>
+    </section>
+</div>
+
+<div id="stages">
+    <div class="plot"><div class="hd"><span data-tip="Welch PSD of 8192 raw int8 ADC samples per RX channel at 37.38 MS/s (±18.7 MHz around LO; IF tone at +500 kHz). Right: RMS per channel in dBFS (CH0 green, CH1 amber, CH2 blue, CH3 rose).">ADC SPECTRUM</span><b id="r-adc"></b></div><canvas id="p-adc"></canvas></div>
+    <div class="plot"><div class="hd"><span data-tip="First 400 raw ADC samples (~10.7 µs, I colored, Q white) on the loudest enabled RX channel. Triggers on DDC signal or free-runs every 1 s. Red dashed lines: ADC clip at ±39 counts.">ADC I/Q</span><b id="r-iq"></b></div><canvas id="p-iq"></canvas></div>
+    <div class="plot"><div class="hd"><span data-tip="Baseband PSD after NCO mixing (500 kHz + CFO), 16× boxcar decimation to 2.336 MS/s, and channel filter.">DDC SPECTRUM</span><b id="r-ddc"></b></div><canvas id="p-ddc"></canvas></div>
+    <div class="plot"><div class="hd"><span data-tip="Baseband magnitude |I+jQ| per RX channel over 4096 DDC samples (1.75 ms, peak-held in 3.4 µs bins, ADC count scale). Steps show TX element phase changes through H. Red line: clip at 39.">DDC ENVELOPE</span><b id="r-env"></b></div><canvas id="p-env"></canvas></div>
+    <div class="plot"><div class="hd"><span data-tip="4-channel vector change between 8-sample (3.4 µs) windows before and after each sample, common phase removed. Amber line: threshold; blue line: frame start (t = 0).">STEP DETECTOR</span><b id="r-det"></b></div><canvas id="p-det"></canvas></div>
+    <div class="plot"><div class="hd"><span data-tip="Unwrapped common carrier phase across the 1008 writes of the last decoded frame, after quiet-tone CFO removal. Slope gives residual CFO; curvature shows LO drift.">PLL PHASE</span><b id="r-pll"></b></div><canvas id="p-pll"></canvas></div>
+    <div class="plot"><div class="hd"><span data-tip="Averaged baseband PSD of decoded frames (updated every 4th good frame, CFO removed). Dashed lines mark the first sinc² nulls at ±1/(2T).">FRAME SPECTRUM</span><b id="r-fpsd"></b></div><canvas id="p-fpsd"></canvas></div>
+    <div class="plot sq"><div class="hd"><span data-tip="Estimated 4×4 channel matrix H from peer TX elements (columns EL0–EL3) to local RX channels (rows RX0–RX3). Shows gain relative to strongest path (dB) and phase relative to RX0 of that column.">CHANNEL H</span><b id="r-h"></b></div><canvas id="p-h"></canvas></div>
+    <div class="plot wide"><div class="hd"><span data-tip="Equalized payload constellation per peer TX element (455 chips): other streams subtracted using H (SIC), enabled RX channels combined by matched filter (MRC), and π/M chip rotation removed.">SYMBOLS AFTER SIC-MRC</span><b id="r-cons"></b></div>
+        <div id="cons"><canvas id="p-c0"></canvas><canvas id="p-c1"></canvas><canvas id="p-c2"></canvas><canvas id="p-c3"></canvas></div></div>
+</div>
+<div id="tip"></div>
+
+<div id="help"><div class="card">
+    <div class="hd"><span>ARCHITECTURE &amp; SIGNAL CHAIN</span><button class="hbtn" id="help-x">CLOSE</button></div>
+
+    <h3>4×4 SPATIAL MULTIPLEXING</h3>
+    <p>Each unit drives four antenna elements on the same carrier frequency. At the receiver,
+    every channel r measures a linear combination of the transmitted element signals
+    x<sub>k</sub> weighted by the complex propagation paths H<sub>r,k</sub>. Once the 4×4
+    <b>channel matrix H</b> is estimated from the preamble, the receiver separates the active
+    streams as long as the enabled RX channels outnumber or equal the active TX elements and
+    the columns of H are sufficiently independent.</p>
+
+    <h3>PHASE-CODED JTAG TRANSMITTER</h3>
+    <p>The DSI baseband generator outputs a continuous +500 kHz tone above the RF LO. Data is
+    modulated by stepping the FPGA's per-element phase rotators over JTAG rather than modulating
+    the baseband waveform. Two 16-bit FPGA registers control the four elements in pairs
+    (8-bit phase, 256 = 360°): <b>0x2C</b> sets EL0/EL1 and <b>0x2D</b> sets EL2/EL3.</p>
+    <p>One full 4-element update (a <b>chip</b>) requires two JTAG writes of period T
+    (symbol duration 2T, first spectral nulls at ±1/(2T)). Each active element sends
+    differential Gray-coded BPSK (1 bit/chip), QPSK (2 bits/chip), or 8PSK (3 bits/chip) with a
+    π/M per-chip phase rotation so consecutive chips always produce a phase transition.
+    In <b>CDM4 / CDM8</b> modes, BPSK symbols are spread across 4 or 8 chips by orthogonal
+    Walsh × PN sequences.</p>
+
+    <h3>FRAME STRUCTURE (1024 JTAG WRITES)</h3>
+    <p>Each frame is dispatched to the fpga-csi driver as a single 1024-write ioctl batch:
+    16 lead-in writes (repeating the zero-phase tail state) followed by 504 chips (1008 writes,
+    ~6–20 ms on air for T = 6–19.2 µs). Before frame 0 of a burst, the transmitter holds an
+    unmodulated lead tone so the MAX2850 synthesizer settles and the receiver can estimate
+    coarse carrier frequency offset (CFO).</p>
+    <p><b>Preamble</b> (24 chips, 48 writes). Fixed phase sequence. Chip 0 flips all four elements
+    by 180°; subsequent writes flip one element of the active pair by 180° and step the other by
+    +90° so a boundary step remains visible even if one element is deeply faded. Least-squares
+    regression over the 48 slot means yields the initial 4×4 channel matrix H.</p>
+    <p><b>Header</b> (24 chips, 48 writes). Sent in BPSK with identical bits on all four elements.
+    Encodes the frame mode (SDM/CDM4/CDM8), per-element modulation (OFF/BPSK/QPSK/8PSK),
+    end-of-burst flag, 4-bit sequence number, and CRC-8. The receiver configures its demapper
+    from each header with no prior out-of-band negotiation.</p>
+    <p><b>Payload</b> (455 chips, 910 writes) + <b>Tail</b> (1 chip returning all phases to 0°).
+    Carries 24-byte blocks (1B type, 1B length, 20B data, 2B CRC-16): station ID, link feedback,
+    chat fragments, ACKs, and deterministic PRBS filler blocks used for live bit-error-rate (BER)
+    measurement. No FEC is applied; throughput counts only blocks passing CRC-16.</p>
+
+    <h3>RECEIVER DSP &amp; JOINT BOUNDARY TRACKER</h3>
+    <p>Four 8-bit CSI ADC streams at 37.38 MS/s (hardware saturation near ±39 counts) are
+    mixed down by a 500 kHz + CFO NCO, boxcar-decimated 16× to 2.336 MS/s, and passed
+    through a cascaded boxcar channel filter. A frame start is triggered when the 4-channel vector
+    step between adjacent 8-sample (3.4 µs) windows exceeds the noise- and signal-relative
+    thresholds after a quiet carrier gap. Discrete TX PLL phase spurs (25–280 kHz) are fitted by
+    least squares and subtracted before tracking.</p>
+    <p>Paced JTAG batches clock writes at a programmed period T (6–18.9 µs via RP1 PIO or RIO),
+    while unpaced batches average ~19.2 µs with occasional multi-period stalls. For each write w,
+    the tracker searches candidate sample boundaries n ∈ [b<sub>w−1</sub> + W<sub>lo</sub>T,
+    b<sub>w−1</sub> + W<sub>hi</sub>T] jointly with all M<sub>a</sub> × M<sub>b</sub> phase
+    hypotheses of the active register pair, combining the 4-channel residual against H with an
+    asymmetric timing prior (wider and capped on the late side). A decision-directed PLL tracks
+    common phase/frequency drift across the frame while LMS + windowed least-squares updates
+    track H. After tracking, payload symbols are extracted by successive interference cancellation
+    and maximum-ratio combining (<b>SIC-MRC</b>).</p>
+
+    <h3>TDD MAC, POWER CONTROL &amp; RATE ADAPTATION</h3>
+    <p>Both units share one RF channel in half-duplex TDD. While transmitting, local RX samples are
+    discarded and the 8 MB CSI ring is allowed to fill and park its DMA thread so memory bus traffic
+    cannot stall bit-banged JTAG writes. The last frame of a burst sets the header end-of-burst flag,
+    handing the channel to the peer after TURNAROUND ms; if no peer is heard, a random backoff
+    between BEACON MIN and MAX initiates a new burst.</p>
+    <p>Frames 0, 1, and N−1 of each burst carry a 20-byte <b>feedback block</b> reporting the
+    receiver's per-element symbol SNR, model SNR, 99th-percentile ADC peak level, TX/RX gains,
+    cumulative and per-burst good block counts, and the announced write period T for its next
+    burst. Using this feedback, <b>AUTO TX POWER (ATPC)</b> steers the peer's RX ADC level to
+    PEER RX LEVEL TARGET (backing off 6 dB if above ADC LEVEL LIMIT), and <b>AUTO LINK RATE</b>
+    steps T through the rate table (18.9 ↔ 6 µs) based on per-burst block delivery relative to
+    the goodput break-even threshold T<sub>i</sub> / T<sub>i−1</sub>.</p>
+</div></div>
+
+<div class="hud-pop" id="set-pop">
+    <div id="set-body"></div>
+    <div class="actions">
+        <button class="abtn" id="s-defaults">DEFAULTS</button>
+    </div>
+</div>
+
+<script type="module" src="./app.js?v=4"></script>
+</body>
+</html>

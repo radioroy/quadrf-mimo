@@ -1,0 +1,5 @@
+quadrf-mimo (0.1.0-1) unstable; urgency=medium
+
+  * Initial standalone release for QuadRF.
+
+ -- Roy C. Gross <61633595+radioroy@users.noreply.github.com>  Tue, 13 Oct 2026 18:35:00 -0700

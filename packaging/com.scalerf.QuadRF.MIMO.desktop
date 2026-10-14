@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=MIMO Link
+Comment=Phase-coded 4x4 MIMO link and chat between two QuadRFs
+Exec=/usr/bin/quadrf-mimo-launch
+TryExec=/usr/bin/quadrf-mimo
+Icon=quadrf-mimo
+Terminal=false
+Categories=HamRadio;Science;
+X-QuadRF-Desktop=true

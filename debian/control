@@ -1,0 +1,27 @@
+Source: quadrf-mimo
+Section: hamradio
+Priority: optional
+Maintainer: Roy C. Gross <61633595+radioroy@users.noreply.github.com>
+Build-Depends:
+ cmake,
+ debhelper-compat (= 13),
+ pkgconf | pkg-config
+Standards-Version: 4.7.2
+Rules-Requires-Root: no
+Homepage: https://github.com/radioroy/quadrf-mimo
+
+Package: quadrf-mimo
+Architecture: arm64
+Depends:
+ quadrf-common (>= 1.0.0),
+ ${misc:Depends},
+ ${shlibs:Depends}
+Recommends:
+ quadrf-fpga (>= 1.0.0)
+Description: phase-coded 4x4 MIMO transceiver and web HUD for QuadRF
+ Runs a phase-coded 4x4 MIMO TDD link across the four QuadRF antenna elements
+ and serves live channel matrix, constellation, spectrum, and chat telemetry
+ over WebSockets.
+ .
+ Includes the systemd service, desktop launcher, web application, and
+ QuadRF control panel integration.
